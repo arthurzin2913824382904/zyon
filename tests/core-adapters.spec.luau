@@ -12,6 +12,7 @@ local Rush = { candidate = {} }
 local invalidations, releases, debugCalls = 0, 0, 0
 local rejectInvalidation, rejectSmartRelease = false, false
 local STR = { Enabled = false, SmartRelease = false }
+local SPRINT = { Get = function() return false end, Set = function() return true end, Error = function() return nil end }
 function STR.SetEnabled(value) STR.Enabled = value; return true end
 function STR.SetSmartRelease(value)
     if rejectSmartRelease then return false end
@@ -81,7 +82,8 @@ assert(not STR.Enabled and not STR.SmartRelease)
 rejectSmartRelease = true
 assert(not captured.features.autoShooting.Set(true))
 assert(not STR.Enabled and not STR.SmartRelease)
-assert(captured.features.autoPassing == nil and captured.features.autoSprint == nil)
+assert(captured.features.autoPassing == nil)
+assert(captured.features.autoSprint.Set == SPRINT.Set and captured.features.autoSprint.Get == SPRINT.Get)
 print("PASS shooting wraps the real assist and unavailable features stay unbound")
 
 ENV.AutoGKDebug = function() debugCalls += 1 end

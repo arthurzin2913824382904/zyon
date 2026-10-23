@@ -1,5 +1,6 @@
 -- Zyon Hub | Illegal Soccer | source supplied by the user
 -- @ZYON_UI_FACTORY@
+-- @ZYON_SPRINT_FACTORY@
 
 local function createZyonConfigStore(d)
     local A = { Accent = "9D62FF", RainbowUI = false, Selected = "", Storage = "Session only", Notice = "" }
@@ -385,8 +386,8 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = assert(Players.LocalPlayer, "Run this on the client")
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 10)
 -- Bump the release ID for every shipped update to trigger the one-time OK prompt.
-local RELEASE_VERSION = "2026.10.22.1"
-local BUILD = "Zyon Hub 1.0.0 | GK 3.2.7 | STR 0.16.3 | Misc 0.18.0 | Evaluation 0.2"
+local RELEASE_VERSION = "2026.10.22.2"
+local BUILD = "Zyon Hub 1.1.0 | GK 3.2.7 | STR 0.16.3 | Misc 0.19.0 | Evaluation 0.2"
 local ENV = _G
 if type(getgenv) == "function" then
     local ok, environment = pcall(getgenv)
@@ -8458,6 +8459,34 @@ ENV.ZyonMiscDebug = function()
     return result
 end
 
+local SPRINT = createAutoSprint({
+    target = game,
+    heartbeat = RunService.Heartbeat,
+    alive = function() return S.alive end,
+    getBinding = function() return M.Keybinds.Get("Sprint") end,
+    isKeyboardKey = function(key)
+        return typeof(key) == "EnumItem" and key.EnumType == Enum.KeyCode
+            and key ~= Enum.KeyCode.Unknown and not M.Keybinds.IsGamepadKeyCode(key)
+    end,
+    getVirtualInput = function() return game:GetService("VirtualInputManager") end,
+    isKeyDown = function(key) return UserInputService:IsKeyDown(key) end,
+    shouldSprint = function()
+        if not S.focused or S.uiBusy or UserInputService:GetFocusedTextBox()
+            or game:GetService("GuiService").MenuIsOpen or M.Freeze.IsFrozen() or M.Replay.IsActive() then return false end
+        local character = LocalPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        return character and character.Parent and humanoid and humanoid.Health > 0
+            and not M.Controllers.IsSuspended(character) and humanoid.MoveDirection.Magnitude > 0.05
+    end,
+    report = function(message) report("AUTO SPRINT", message) end,
+})
+S.releaseMisc = function()
+    local sprintOK, sprintError = SPRINT.Cleanup()
+    local miscOK, miscError = MISC.Cleanup()
+    if sprintOK == false then return false, sprintError end
+    return miscOK, miscError
+end
+
 --==============================================================
 -- INTERFACE CONTROLS
 --==============================================================
@@ -8585,8 +8614,12 @@ do
             end),
             preShotCoverage = configFeature("PreShotCoverage", function() invalidateFrame(true) end),
             respectManualMovement = configFeature("RespectManualMovement"),
-            -- autoPassing, infiniteStamina, fullSpeedCharge, ballMagnetic and
-            -- autoSprint need real game implementations. Bind them through
+            autoSprint = {
+                Get = SPRINT.Get, Set = SPRINT.Set, Error = SPRINT.Error,
+                Description = "Usa a tecla de Sprint do jogo enquanto você se move.",
+            },
+            -- autoPassing, infiniteStamina, fullSpeedCharge and ballMagnetic
+            -- need real game implementations. Bind them through
             -- ZyonHub.BindFeature(key, { Get = ..., Set = ... }) when available.
         },
         choices = {

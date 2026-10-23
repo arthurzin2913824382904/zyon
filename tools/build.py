@@ -8,7 +8,10 @@ ui = (ROOT / "src/ZyonUI.luau").read_text()
 factory = "local createZyonUI = (function()\n" + ui + "\nend)()"
 core = (ROOT / "src/zyon-core.luau").read_text()
 assert core.count(MARKER) == 1, "Core must have exactly one UI insertion point"
-main = core.replace(MARKER, factory)
+sprint = (ROOT / "src/AutoSprint.luau").read_text()
+sprint_marker = "-- @ZYON_SPRINT_FACTORY@"
+assert core.count(sprint_marker) == 1, "Core must have exactly one sprint insertion point"
+main = core.replace(MARKER, factory).replace(sprint_marker, "local createAutoSprint = (function()\n" + sprint + "\nend)()")
 preview = '''-- Zyon Hub UI preview: run as a LocalScript in StarterPlayerScripts.
 -- No Illegal Soccer modules or gameplay automation are loaded by this preview.
 '''+factory+'''

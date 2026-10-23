@@ -1,6 +1,6 @@
 -- Zyon Hub | Illegal Soccer | source supplied by the user
 local createZyonUI = (function()
--- Dependency-free client UI. Gameplay callbacks are explicit; absent callbacks stay unavailable.
+-- Matte client UI. Every row responds to input; missing gameplay callbacks explain why they cannot run.
 local function createZyonUI(options)
     options = options or {}
     local rt = options.runtime or {}
@@ -18,16 +18,16 @@ local function createZyonUI(options)
     }
     local parent = assert(options.parent, "Zyon Hub requires a PlayerGui parent")
     local palette = {
-        black = Color3.fromRGB(8, 8, 11),
-        sidebar = Color3.fromRGB(5, 5, 8),
-        surface = Color3.fromRGB(15, 15, 21),
-        hover = Color3.fromRGB(22, 19, 30),
-        line = Color3.fromRGB(37, 31, 48),
-        purple = Color3.fromRGB(157, 98, 255),
-        purpleDark = Color3.fromRGB(58, 33, 91),
-        white = Color3.fromRGB(250, 248, 255),
-        secondary = Color3.fromRGB(176, 168, 194),
-        off = Color3.fromRGB(46, 43, 54),
+        black = Color3.fromRGB(12, 12, 15),
+        sidebar = Color3.fromRGB(8, 8, 10),
+        surface = Color3.fromRGB(18, 18, 22),
+        hover = Color3.fromRGB(25, 24, 30),
+        line = Color3.fromRGB(37, 36, 43),
+        purple = Color3.fromRGB(166, 128, 255),
+        purpleDark = Color3.fromRGB(39, 30, 57),
+        white = Color3.fromRGB(246, 245, 249),
+        secondary = Color3.fromRGB(146, 143, 157),
+        off = Color3.fromRGB(49, 48, 57),
     }
     local state = {
         autoShooting = false, autoPassing = false, infiniteStamina = false,
@@ -46,7 +46,7 @@ local function createZyonUI(options)
     local destroyed, minimized, hidden = false, false, false
     local activeTab, busyCount = "offense", 0
     local dragInput, dragStart, dragOrigin, rangeInput
-    local width, height = 820, 570
+    local width, height, headerHeight = 800, 590, 54
     local lastViewport, lastBusy
 
     local function connect(signal, callback)
@@ -105,54 +105,68 @@ local function createZyonUI(options)
     }, parent)
     local host = frame(gui, "WindowHost", UDim2.fromOffset(24, 60), UDim2.fromOffset(0, 0))
     host.BackgroundTransparency = 1
+    -- Flat, neutral surfaces with a soft silhouette; no image textures or asset downloads.
     local window = round(frame(host, "Window", UDim2.fromOffset(0, 0),
-        UDim2.fromOffset(width, height), palette.black), 12)
+        UDim2.fromOffset(width, height), palette.black), 9)
     window.Active, window.ClipsDescendants = true, true
-    outline(window, palette.purpleDark)
+    outline(window, palette.line)
     local scale = create("UIScale", { Scale = 1 }, window)
 
-    local header = button(window, "DragHandle", UDim2.fromOffset(0, 0), UDim2.new(1, -94, 0, 66))
+    local header = button(window, "DragHandle", UDim2.fromOffset(0, 0), UDim2.new(1, -98, 0, headerHeight))
     header.Selectable, header.Active = false, true
-    local logo = round(frame(header, "Logo", UDim2.fromOffset(22, 20),
-        UDim2.fromOffset(28, 28), palette.purpleDark), 7)
-    local logoText = text(logo, "Mark", "Z", UDim2.fromOffset(0, 0), UDim2.fromScale(1, 1), 18)
-    logoText.Font, logoText.TextXAlignment = Enum.Font.GothamBold, Enum.TextXAlignment.Center
-    local brand = text(header, "Brand", "ZYON <font color=\"#9D62FF\">HUB</font>",
-        UDim2.fromOffset(60, 17), UDim2.fromOffset(210, 24), 18)
+    local logo = frame(header, "Logo", UDim2.fromOffset(20, 17), UDim2.fromOffset(22, 20))
+    logo.BackgroundTransparency = 1
+    round(frame(logo, "Top", UDim2.fromOffset(2, 1), UDim2.fromOffset(18, 3), palette.white), 1)
+    local slash = round(frame(logo, "Slash", UDim2.fromOffset(1, 9), UDim2.fromOffset(20, 3), palette.purple), 1)
+    slash.Rotation = -44
+    round(frame(logo, "Bottom", UDim2.fromOffset(2, 17), UDim2.fromOffset(18, 3), palette.white), 1)
+    local brand = text(header, "Brand", "ZYON <font color=\"#A680FF\">HUB</font>",
+        UDim2.fromOffset(53, 15), UDim2.fromOffset(165, 24), 16)
     brand.RichText, brand.Font = true, Enum.Font.GothamBold
-    text(header, "Tagline", "CONTROL PANEL", UDim2.fromOffset(61, 40),
-        UDim2.fromOffset(180, 14), 9, palette.secondary)
-    frame(window, "HeaderLine", UDim2.fromOffset(0, 65), UDim2.new(1, 0, 0, 1), palette.line)
-    local minimize = button(window, "Minimize", UDim2.new(1, -84, 0, 20), UDim2.fromOffset(28, 28))
-    local close = button(window, "Close", UDim2.new(1, -46, 0, 20), UDim2.fromOffset(28, 28))
+    text(header, "GameName", "Illegal Soccer", UDim2.fromOffset(210, 17),
+        UDim2.fromOffset(180, 20), 11, palette.secondary)
+    frame(window, "HeaderLine", UDim2.fromOffset(0, headerHeight - 1), UDim2.new(1, 0, 0, 1), palette.line)
+    local minimize = round(button(window, "Minimize", UDim2.new(1, -84, 0, 13), UDim2.fromOffset(28, 28)), 5)
+    local close = round(button(window, "Close", UDim2.new(1, -46, 0, 13), UDim2.fromOffset(28, 28)), 5)
+    for _, control in ipairs({ minimize, close }) do
+        control.BackgroundColor3 = palette.hover
+        connect(control.MouseEnter, function() animate(control, { BackgroundTransparency = 0 }) end)
+        connect(control.MouseLeave, function() animate(control, { BackgroundTransparency = 1 }) end)
+    end
     local minimizeLabel = text(minimize, "Glyph", "−", UDim2.fromOffset(0, 0), UDim2.fromScale(1, 1), 22)
     minimizeLabel.TextXAlignment = Enum.TextXAlignment.Center
     local closeLabel = text(close, "Glyph", "×", UDim2.fromOffset(0, 0), UDim2.fromScale(1, 1), 22)
     closeLabel.TextXAlignment = Enum.TextXAlignment.Center
 
-    local body = frame(window, "Body", UDim2.fromOffset(0, 66), UDim2.new(1, 0, 1, -66), palette.black)
-    local sidebar = frame(body, "Sidebar", UDim2.fromOffset(0, 0), UDim2.new(0, 192, 1, 0), palette.sidebar)
+    local body = frame(window, "Body", UDim2.fromOffset(0, headerHeight), UDim2.new(1, 0, 1, -headerHeight), palette.black)
+    local sidebar = frame(body, "Sidebar", UDim2.fromOffset(0, 0), UDim2.new(0, 184, 1, 0), palette.sidebar)
     frame(sidebar, "Divider", UDim2.new(1, -1, 0, 0), UDim2.new(0, 1, 1, 0), palette.line)
-    text(sidebar, "MenuHeading", "MENU", UDim2.fromOffset(24, 23), UDim2.fromOffset(140, 18), 10, palette.secondary)
-    local nav = frame(sidebar, "Navigation", UDim2.fromOffset(12, 57), UDim2.new(1, -24, 0, 168), palette.sidebar)
-    create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }, nav)
-    local userCard = round(frame(sidebar, "User", UDim2.new(0, 14, 1, -73), UDim2.new(1, -28, 0, 52)), 8)
+    text(sidebar, "MenuHeading", "WORKSPACE", UDim2.fromOffset(22, 23), UDim2.fromOffset(140, 16), 9, palette.secondary)
+    local nav = frame(sidebar, "Navigation", UDim2.fromOffset(10, 53), UDim2.new(1, -20, 0, 156), palette.sidebar)
+    create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, nav)
+    text(sidebar, "Shortcut", "RSHIFT  /  mostrar ou ocultar", UDim2.new(0, 22, 1, -96), UDim2.new(1, -36, 0, 18), 9, palette.secondary)
+    frame(sidebar, "UserDivider", UDim2.new(0, 16, 1, -72), UDim2.new(1, -32, 0, 1), palette.line)
+    local userCard = frame(sidebar, "User", UDim2.new(0, 12, 1, -65), UDim2.new(1, -24, 0, 52), palette.sidebar)
     local userMark = round(frame(userCard, "Avatar", UDim2.fromOffset(10, 11), UDim2.fromOffset(30, 30), palette.purpleDark), 8)
-    local userInitial = text(userMark, "Initial", "Z", UDim2.fromOffset(0, 0), UDim2.fromScale(1, 1), 14)
+    local userInitial = text(userMark, "Initial", string.upper(string.sub(options.playerName or "P", 1, 1)), UDim2.fromOffset(0, 0), UDim2.fromScale(1, 1), 14)
     userInitial.TextXAlignment = Enum.TextXAlignment.Center
     text(userCard, "Player", options.playerName or "Player", UDim2.fromOffset(50, 8), UDim2.new(1, -57, 0, 20), 12)
-    text(userCard, "Edition", "ZYON HUB • v1", UDim2.fromOffset(50, 29), UDim2.new(1, -57, 0, 15), 9, palette.purple)
+    text(userCard, "Edition", "Sessão local", UDim2.fromOffset(50, 29), UDim2.new(1, -57, 0, 15), 10, palette.secondary)
 
-    local main = frame(body, "Main", UDim2.fromOffset(192, 0), UDim2.new(1, -192, 1, 0), palette.black)
-    local pageTitle = text(main, "PageTitle", "Offense", UDim2.fromOffset(28, 23), UDim2.new(1, -56, 0, 30), 24)
-    pageTitle.Font = Enum.Font.GothamBold
+    local main = frame(body, "Main", UDim2.fromOffset(184, 0), UDim2.new(1, -184, 1, 0), palette.black)
+    local pageTitle = text(main, "PageTitle", "Offense", UDim2.fromOffset(26, 20), UDim2.new(1, -52, 0, 29), 22)
+    pageTitle.Font = Enum.Font.GothamMedium
     local pageSubtitle = text(main, "PageSubtitle", "Controle as opções de ataque.",
-        UDim2.fromOffset(28, 59), UDim2.new(1, -56, 0, 20), 12, palette.secondary)
-    local message = text(main, "Status", "RightShift para mostrar ou ocultar",
-        UDim2.new(0, 28, 1, -35), UDim2.new(1, -56, 0, 22), 11, palette.secondary)
+        UDim2.fromOffset(26, 52), UDim2.new(1, -52, 0, 18), 11, palette.secondary)
+    local noticeBar = frame(main, "NoticeBar", UDim2.new(0, 20, 1, -37), UDim2.new(1, -40, 0, 28), palette.black)
+    round(noticeBar, 5)
+    local message = text(noticeBar, "Status", "Selecione uma opção para configurar.",
+        UDim2.fromOffset(8, 0), UDim2.new(1, -16, 1, 0), 10, palette.secondary)
     local function notice(value, isError)
         if destroyed then return end
         message.Text, message.TextColor3 = value, isError and palette.purple or palette.secondary
+        noticeBar.BackgroundColor3 = isError and palette.purpleDark or palette.black
+        if options.onNotice then options.onNotice(value, isError == true) end
     end
     local function busy()
         local value = dragInput ~= nil or rangeInput ~= nil or busyCount > 0
@@ -171,7 +185,7 @@ local function createZyonUI(options)
     end
     local function fit(x, y)
         local view = viewport()
-        local actualHeight = minimized and 66 or height
+        local actualHeight = minimized and headerHeight or height
         local factor = math.max(0.05, math.min(1, (view.X - 24) / width, (view.Y - 48) / actualHeight))
         scale.Scale, lastViewport = factor, view
         window.Size = UDim2.fromOffset(width, actualHeight)
@@ -180,7 +194,7 @@ local function createZyonUI(options)
             math.clamp(y or host.Position.Y.Offset, 24, math.max(24, view.Y - actualHeight * factor - 12)))
     end
 
-    -- Vector icons keep both tabs readable without image downloads or missing glyphs.
+    -- Small vector icons work in executors without an HTTP image dependency.
     local function knife(owner)
         local shape = frame(owner, "Knife", UDim2.fromOffset(15, 12), UDim2.fromOffset(20, 24))
         shape.BackgroundTransparency, shape.Rotation = 1, -42
@@ -215,14 +229,16 @@ local function createZyonUI(options)
         mark.ZIndex = 4
     end
     local function addTab(id, title, subtitle, drawIcon, order)
-        local control = round(button(nav, id, UDim2.fromOffset(0, 0), UDim2.new(1, 0, 0, 48)), 7)
+        local control = round(button(nav, id, UDim2.fromOffset(0, 0), UDim2.new(1, 0, 0, 44)), 6)
         control.LayoutOrder, control.BackgroundColor3, control.BackgroundTransparency = order, palette.sidebar, 0
-        local marker = round(frame(control, "ActiveMarker", UDim2.fromOffset(0, 11), UDim2.fromOffset(3, 26), palette.purple), 2)
+        local tint = round(frame(control, "SelectedTint", UDim2.fromOffset(0, 0), UDim2.fromScale(1, 1), palette.purpleDark), 6)
+        tint.BackgroundTransparency = 0.6
+        local marker = round(frame(control, "ActiveMarker", UDim2.fromOffset(0, 12), UDim2.fromOffset(2, 20), palette.purple), 1)
         drawIcon(control)
-        local label = text(control, "Label", title, UDim2.fromOffset(52, 0), UDim2.new(1, -60, 1, 0), 14)
+        local label = text(control, "Label", title, UDim2.fromOffset(50, 0), UDim2.new(1, -58, 1, 0), 13)
         label.Font = Enum.Font.GothamMedium
         local page = create("ScrollingFrame", {
-            Name = id, Position = UDim2.fromOffset(28, 101), Size = UDim2.new(1, -56, 1, -153),
+            Name = id, Position = UDim2.fromOffset(26, 88), Size = UDim2.new(1, -52, 1, -133),
             CanvasSize = UDim2.fromOffset(0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y,
             ScrollingDirection = Enum.ScrollingDirection.Y, ScrollBarThickness = 3,
             ScrollBarImageColor3 = palette.purple, BorderSizePixel = 0,
@@ -230,7 +246,7 @@ local function createZyonUI(options)
         }, main)
         create("UIListLayout", { Padding = UDim.new(0, 14), SortOrder = Enum.SortOrder.LayoutOrder }, page)
         create("UIPadding", { PaddingTop = UDim.new(0, 1), PaddingLeft = UDim.new(0, 1), PaddingRight = UDim.new(0, 5), PaddingBottom = UDim.new(0, 6) }, page)
-        pages[id], tabs[id] = page, { button = control, marker = marker, title = title, subtitle = subtitle }
+        pages[id], tabs[id] = page, { button = control, marker = marker, tint = tint, title = title, subtitle = subtitle }
         connect(control.Activated, function() api.SelectTab(id) end)
         connect(control.MouseEnter, function()
             if not destroyed then animate(control, { BackgroundColor3 = palette.hover }) end
@@ -249,15 +265,16 @@ local function createZyonUI(options)
         activeTab = id
         for name, page in pairs(pages) do
             page.Visible, tabs[name].marker.Visible = name == id, name == id
+            tabs[name].tint.Visible = name == id
         end
         pageTitle.Text, pageSubtitle.Text = tabs[id].title, tabs[id].subtitle
         return true
     end
     local function card(page, name, heading, order, cardHeight)
-        local panel = round(frame(page, name, UDim2.fromOffset(0, 0), UDim2.new(1, 0, 0, cardHeight)), 10)
+        local panel = round(frame(page, name, UDim2.fromOffset(0, 0), UDim2.new(1, 0, 0, cardHeight)), 7)
         panel.LayoutOrder = order
         outline(panel)
-        text(panel, "Heading", heading, UDim2.fromOffset(18, 14), UDim2.new(1, -36, 0, 18), 10, palette.purple)
+        text(panel, "Heading", heading, UDim2.fromOffset(16, 12), UDim2.new(1, -32, 0, 16), 10, palette.secondary)
         return panel
     end
     local function available(key)
@@ -272,11 +289,17 @@ local function createZyonUI(options)
             if ok and type(value) == "boolean" then state[key] = value else readError = true end
         end
         local on = ready and not readError and state[key]
-        local mode = readError and "Erro de integração" or (item.busy and "Aplicando…" or (ready and (on and "Ativado" or "Desativado") or "Pendente • sem implementação na source"))
-        item.description.Text = ready and (adapter.Description or item.defaultDescription) or mode
-        item.status.Text = ready and mode or "PENDENTE"
+        local failure
+        if ready and type(adapter.Error) == "function" then
+            local ok, reason = pcall(adapter.Error)
+            if ok and type(reason) == "string" then failure = reason end
+        end
+        item.description.Text = failure or (ready and adapter.Description) or item.defaultDescription
+        item.status.Text = readError and "Erro" or (item.busy and "Aplicando…" or (ready and "" or "Sem integração"))
         item.status.TextColor3 = on and palette.purple or palette.secondary
-        item.switch.Active, item.switch.Selectable = ready and not item.busy and not readError, ready and not readError
+        -- Unimplemented actions still accept clicks and explain the missing integration.
+        item.switch.Active, item.switch.Selectable = not item.busy, true
+        item.hit.Active, item.hit.Selectable = not item.busy, true
         local position = UDim2.fromOffset(on and 23 or 3, 3)
         local color = on and palette.purple or palette.off
         if item.lastOn ~= on then
@@ -287,7 +310,11 @@ local function createZyonUI(options)
     end
     function api.SetFeature(key, value)
         local item = controls[key]
-        if destroyed or not item or item.busy or not available(key) or type(value) ~= "boolean" then return false end
+        if destroyed or not item or item.busy or type(value) ~= "boolean" then return false end
+        if not available(key) then
+            notice(item.title .. " ainda não possui implementação nesta source.", true)
+            return false
+        end
         local adapter = adapters[key]
         local previous = state[key]
         item.busy, busyCount = true, busyCount + 1
@@ -313,26 +340,36 @@ local function createZyonUI(options)
         return success
     end
     local function toggle(panel, key, title, description, y, withDivider)
-        local row = frame(panel, key, UDim2.fromOffset(18, y), UDim2.new(1, -36, 0, 68))
+        local row = frame(panel, key, UDim2.fromOffset(16, y), UDim2.new(1, -32, 0, 56))
         row.BackgroundTransparency = 1
-        text(row, "Title", title, UDim2.fromOffset(0, 0), UDim2.new(1, -70, 0, 24), 14)
-        local detail = text(row, "Description", description, UDim2.fromOffset(0, 25), UDim2.new(1, -2, 0, 19), 10, palette.secondary)
-        local status = text(row, "State", "", UDim2.fromOffset(0, 46), UDim2.new(1, -5, 0, 14), 9, palette.secondary)
-        local switch = round(button(row, "Switch", UDim2.new(1, -46, 0, 2), UDim2.fromOffset(44, 24)), 12)
+        text(row, "Title", title, UDim2.fromOffset(0, 5), UDim2.new(1, -78, 0, 21), 13)
+        local detail = text(row, "Description", description, UDim2.fromOffset(0, 29), UDim2.new(1, -132, 0, 17), 10, palette.secondary)
+        local status = text(row, "State", "", UDim2.new(1, -126, 0, 29), UDim2.fromOffset(126, 17), 9, palette.secondary)
+        status.TextXAlignment = Enum.TextXAlignment.Right
+        local hit = button(row, "HitTarget", UDim2.fromOffset(-6, 0), UDim2.new(1, -54, 1, 0))
+        local switch = round(button(row, "Switch", UDim2.new(1, -44, 0, 7), UDim2.fromOffset(44, 24)), 12)
         switch.BackgroundTransparency, switch.BackgroundColor3 = 0, palette.off
         local knob = round(frame(switch, "Knob", UDim2.fromOffset(3, 3), UDim2.fromOffset(18, 18), palette.white), 9)
-        controls[key] = { switch = switch, knob = knob, description = detail, status = status,
+        controls[key] = { switch = switch, hit = hit, knob = knob, description = detail, status = status,
             title = title, defaultDescription = description, busy = false }
-        if withDivider then frame(row, "Divider", UDim2.fromOffset(0, 67), UDim2.new(1, 0, 0, 1), palette.line) end
-        connect(switch.Activated, function()
+        if withDivider then frame(row, "Divider", UDim2.fromOffset(0, 55), UDim2.new(1, 0, 0, 1), palette.line) end
+        local function activate()
             if destroyed or hidden or minimized or not switch.Active then return end
             api.SetFeature(key, not state[key])
+        end
+        connect(switch.Activated, activate)
+        connect(hit.Activated, activate)
+        connect(hit.MouseEnter, function()
+            if not destroyed then animate(row, { BackgroundColor3 = palette.hover, BackgroundTransparency = 0 }) end
+        end)
+        connect(hit.MouseLeave, function()
+            if not destroyed then animate(row, { BackgroundTransparency = 1 }) end
         end)
         renderToggle(key)
     end
-    local offenseCard = card(offense, "Automation", "AUTOMATION", 1, 205)
-    toggle(offenseCard, "autoShooting", "Auto Shooting", "Assistência e liberação de chute.", 47, true)
-    toggle(offenseCard, "autoPassing", "Auto Passing", "Passe automático.", 125, false)
+    local offenseCard = card(offense, "Automation", "Shooting & passing", 1, 160)
+    toggle(offenseCard, "autoShooting", "Auto Shooting", "Assistência e liberação de chute.", 38, true)
+    toggle(offenseCard, "autoPassing", "Auto Passing", "Passe automático.", 96, false)
 
     local function renderChoice(key)
         if destroyed then return end
@@ -394,32 +431,32 @@ local function createZyonUI(options)
         end
         renderChoice(key)
     end
-    local gkLive = card(defense, "GoalkeeperLive", "GOALKEEPER STATUS", 1, 147)
-    local gkStatus = text(gkLive, "GKStatus", "Aguardando integração", UDim2.fromOffset(18, 40), UDim2.new(1, -36, 0, 25), 16)
+    local gkLive = card(defense, "GoalkeeperLive", "Live status", 1, 124)
+    local gkStatus = text(gkLive, "GKStatus", "Aguardando integração", UDim2.fromOffset(16, 33), UDim2.new(1, -32, 0, 23), 14)
     gkStatus.Font = Enum.Font.GothamMedium
-    local gkDetail = text(gkLive, "GKDetail", "", UDim2.fromOffset(18, 71), UDim2.new(1, -36, 0, 34), 11, palette.secondary)
+    local gkDetail = text(gkLive, "GKDetail", "", UDim2.fromOffset(16, 59), UDim2.new(1, -32, 0, 28), 10, palette.secondary)
     gkDetail.TextWrapped, gkDetail.TextTruncate = true, Enum.TextTruncate.None
-    local gkStats = text(gkLive, "GKStats", "", UDim2.fromOffset(18, 117), UDim2.new(1, -36, 0, 18), 10, palette.purple)
-    local gkAutomation = card(defense, "GoalkeeperAutomation", "AUTO GK • AUTOMATION", 2, 507)
-    toggle(gkAutomation, "autoGK", "Auto GK", "Ativa as defesas automáticas do goleiro.", 43, true)
-    toggle(gkAutomation, "closeRangeRush", "Close-range Rush", "Avançar para defender em curta distância.", 119, true)
-    toggle(gkAutomation, "highBallJumps", "High-ball Jumps", "Saltar para alcançar bolas altas.", 195, true)
-    toggle(gkAutomation, "jumpThenDive", "Jump Then Dive", "Combinar salto e mergulho nas defesas.", 271, true)
+    local gkStats = text(gkLive, "GKStats", "", UDim2.fromOffset(16, 96), UDim2.new(1, -32, 0, 16), 10, palette.purple)
+    local gkAutomation = card(defense, "GoalkeeperAutomation", "Auto GK", 2, 410)
+    toggle(gkAutomation, "autoGK", "Auto GK", "Ativa as defesas automáticas do goleiro.", 38, true)
+    toggle(gkAutomation, "closeRangeRush", "Close-range Rush", "Avançar para defender em curta distância.", 96, true)
+    toggle(gkAutomation, "highBallJumps", "High-ball Jumps", "Saltar para alcançar bolas altas.", 154, true)
+    toggle(gkAutomation, "jumpThenDive", "Jump Then Dive", "Combinar salto e mergulho nas defesas.", 212, true)
     choice(gkAutomation, "diveDirection", "Dive Direction", {
         { value = "SMART", label = "Smart" }, { value = "FORWARD", label = "Forward" },
         { value = "LEFT", label = "Left" }, { value = "RIGHT", label = "Right" },
         { value = "SIDES", label = "Sides" },
-    }, 349)
-    toggle(gkAutomation, "backwardRecovery", "Lob / Back Recovery", "Recuperação para bolas por cobertura.", 429, false)
-    local positioning = card(defense, "GoalkeeperPositioning", "AUTO GK • POSITIONING", 3, 357)
-    toggle(positioning, "positionAssist", "Position Assist", "Ajustar o posicionamento do goleiro.", 43, true)
-    toggle(positioning, "preShotCoverage", "Pre-shot Coverage", "Cobrir o ângulo antes do chute adversário.", 119, true)
+    }, 276)
+    toggle(gkAutomation, "backwardRecovery", "Lob / Back Recovery", "Recuperação para bolas por cobertura.", 348, false)
+    local positioning = card(defense, "GoalkeeperPositioning", "Positioning", 3, 292)
+    toggle(positioning, "positionAssist", "Position Assist", "Ajustar o posicionamento do goleiro.", 38, true)
+    toggle(positioning, "preShotCoverage", "Pre-shot Coverage", "Cobrir o ângulo antes do chute adversário.", 96, true)
     choice(positioning, "positionMode", "Position Mode", {
         { value = "THREATS", label = "Threats only" },
         { value = "HOME_AND_THREATS", label = "Home + threats" },
-    }, 199)
-    toggle(positioning, "respectManualMovement", "Manual Movement First", "Dar prioridade aos seus movimentos manuais.", 279, false)
-    local diagnostics = card(defense, "GoalkeeperDiagnostics", "DIAGNOSTICS", 4, 96)
+    }, 158)
+    toggle(positioning, "respectManualMovement", "Manual Movement First", "Dar prioridade aos seus movimentos manuais.", 230, false)
+    local diagnostics = card(defense, "GoalkeeperDiagnostics", "Diagnostics", 4, 96)
     local debugButton = round(button(diagnostics, "GKDebug", UDim2.fromOffset(18, 42), UDim2.new(1, -36, 0, 34)), 6)
     debugButton.BackgroundTransparency, debugButton.BackgroundColor3 = 0, palette.black
     outline(debugButton)
@@ -445,25 +482,30 @@ local function createZyonUI(options)
     end
     refreshGK()
 
-    local miscCard = card(misc, "Movement", "MOVEMENT & BALL", 1, 451)
-    toggle(miscCard, "infiniteStamina", "Infinite Stamina", "Controle de stamina.", 47, true)
-    toggle(miscCard, "fullSpeedCharge", "Full Speed Charge", "Movimento durante o carregamento.", 123, true)
-    toggle(miscCard, "ballMagnetic", "Ball Magnetic", "Controle de alcance da bola.", 199, true)
+    local miscCard = card(misc, "Movement", "Movement & ball", 1, 376)
+    toggle(miscCard, "infiniteStamina", "Infinite Stamina", "Controle de stamina.", 38, true)
+    toggle(miscCard, "fullSpeedCharge", "Full Speed Charge", "Movimento durante o carregamento.", 96, true)
+    toggle(miscCard, "ballMagnetic", "Ball Magnetic", "Controle de alcance da bola.", 154, true)
 
-    local range = frame(miscCard, "magneticRange", UDim2.fromOffset(18, 279), UDim2.new(1, -36, 0, 78))
+    local range = frame(miscCard, "magneticRange", UDim2.fromOffset(16, 220), UDim2.new(1, -32, 0, 72))
     range.BackgroundTransparency = 1
-    text(range, "Title", "Ball Magnetic Range", UDim2.fromOffset(0, 0), UDim2.new(1, -100, 0, 24), 14)
-    local rangeValue = text(range, "Value", "12 studs", UDim2.new(1, -90, 0, 0), UDim2.fromOffset(90, 24), 12, palette.purple)
-    rangeValue.TextXAlignment = Enum.TextXAlignment.Right
+    text(range, "Title", "Ball Magnetic Range", UDim2.fromOffset(0, 0), UDim2.new(1, -100, 0, 24), 13)
+    local rangeValue = round(create("TextBox", {
+        Name = "Value", Text = "12", Position = UDim2.new(1, -58, 0, 0), Size = UDim2.fromOffset(58, 25),
+        Font = Enum.Font.Code, TextSize = 12, TextColor3 = palette.white, BackgroundColor3 = palette.black,
+        BorderSizePixel = 0, ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Center,
+    }, range), 4)
+    outline(rangeValue)
     local rangeHit = button(range, "Slider", UDim2.fromOffset(0, 28), UDim2.new(1, 0, 0, 30))
     local track = round(frame(rangeHit, "Track", UDim2.fromOffset(8, 13), UDim2.new(1, -16, 0, 4), palette.off), 2)
     local fill = round(frame(track, "Fill", UDim2.fromOffset(0, 0), UDim2.new(11 / 49, 0, 1, 0), palette.purple), 2)
     local thumb = round(frame(track, "Thumb", UDim2.new(11 / 49, 0, 0.5, 0), UDim2.fromOffset(14, 14), palette.white), 7)
     thumb.AnchorPoint = Vector2.new(0.5, 0.5)
-    text(range, "Limits", "1 stud                                                         50 studs",
-        UDim2.fromOffset(0, 57), UDim2.new(1, 0, 0, 16), 9, palette.secondary)
-    frame(miscCard, "RangeDivider", UDim2.fromOffset(18, 365), UDim2.new(1, -36, 0, 1), palette.line)
-    toggle(miscCard, "autoSprint", "Auto Sprint", "Correr sem manter uma tecla pressionada.", 379, false)
+    text(range, "Minimum", "1 stud", UDim2.fromOffset(0, 56), UDim2.fromOffset(80, 14), 9, palette.secondary)
+    local maximum = text(range, "Maximum", "50 studs", UDim2.new(1, -80, 0, 56), UDim2.fromOffset(80, 14), 9, palette.secondary)
+    maximum.TextXAlignment = Enum.TextXAlignment.Right
+    frame(miscCard, "RangeDivider", UDim2.fromOffset(16, 304), UDim2.new(1, -32, 0, 1), palette.line)
+    toggle(miscCard, "autoSprint", "Auto Sprint", "Correr sem manter uma tecla pressionada.", 312, false)
 
     function api.SetRange(value)
         if destroyed or type(value) ~= "number" or value ~= value or math.abs(value) == math.huge then return false end
@@ -474,11 +516,17 @@ local function createZyonUI(options)
             if not ok or result == false then notice("Não foi possível alterar o alcance.", true); return false end
         end
         state.magneticRange = rounded
-        rangeValue.Text = tostring(rounded) .. " studs"
+        rangeValue.Text = tostring(rounded)
         fill.Size, thumb.Position = UDim2.new((rounded - 1) / 49, 0, 1, 0), UDim2.new((rounded - 1) / 49, 0, 0.5, 0)
         notice("Alcance: " .. rounded .. " studs" .. (available("ballMagnetic") and "" or " • Ball Magnetic pendente"))
         return true
     end
+    connect(rangeValue.FocusLost, function()
+        if destroyed then return end
+        local value = tonumber(rangeValue.Text)
+        if not value or not api.SetRange(value) then notice("Digite um alcance entre 1 e 50 studs.", true) end
+        rangeValue.Text = tostring(state.magneticRange)
+    end)
     local function fromPoint(point)
         if track.AbsoluteSize.X <= 0 then return end
         api.SetRange(1 + math.clamp((point.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1) * 49)
@@ -599,6 +647,92 @@ local function createZyonUI(options)
 end
 
 return createZyonUI
+
+end)()
+local createAutoSprint = (function()
+-- Hold the game's configured Sprint key while moving. Uses normal game sprint/stamina rules.
+-- SendKeyEvent can be unavailable in some executors; failures leave the control off.
+local function createAutoSprint(d)
+    local enabled, closed, service, heldKey, sprintKey = false, false, nil, nil, nil
+    local lastError, connection
+    local A = {}
+    local function errorText(message)
+        lastError = tostring(message)
+        if d.report then d.report(lastError) end
+    end
+    local function release()
+        if not heldKey then return true end
+        local ok, err = pcall(function() service:SendKeyEvent(false, heldKey, false, d.target) end)
+        if not ok then errorText("Não foi possível soltar a tecla de sprint: " .. tostring(err)); return false end
+        heldKey = nil
+        return true
+    end
+    local function prepare()
+        local ok, result = pcall(d.getBinding)
+        if not ok or type(result) ~= "table" or type(result.KeyCodes) ~= "table" then
+            return false, "O jogo não disponibilizou a tecla de Sprint."
+        end
+        local selected
+        for _, key in ipairs(result.KeyCodes) do
+            if d.isKeyboardKey(key) then selected = key; break end
+        end
+        if not selected then return false, "A configuração de Sprint precisa de uma tecla de teclado." end
+        local got, input = pcall(d.getVirtualInput)
+        if not got or not input then return false, "Este executor não disponibiliza entrada virtual para Auto Sprint." end
+        local methodOK, method = pcall(function() return input.SendKeyEvent end)
+        if not methodOK or type(method) ~= "function" then return false, "SendKeyEvent não está disponível neste executor." end
+        service, sprintKey = input, selected
+        return true
+    end
+    function A.Get() return enabled end
+    function A.Error() return lastError end
+    function A.Set(value)
+        if closed or type(value) ~= "boolean" then return false, "Auto Sprint foi descarregado." end
+        if value == enabled and (value or not heldKey) then return true end
+        if not value then
+            enabled = false
+            return release()
+        end
+        local ok, reason = prepare()
+        if not ok then lastError = reason; return false, reason end
+        lastError, enabled = nil, true
+        return true
+    end
+    local function pulse()
+        if closed or not d.alive() then enabled = false; release(); return end
+        if not enabled then release(); return end
+        local ok, moving = pcall(d.shouldSprint)
+        if not ok then
+            enabled = false
+            errorText("Falha ao consultar o movimento: " .. tostring(moving))
+            release()
+            return
+        end
+        if not moving then release(); return end
+        if heldKey then return end
+        -- A physically held key belongs to the player. Do not send its key-up.
+        local reading, physical = pcall(d.isKeyDown, sprintKey)
+        if not reading or physical then return end
+        local sent, err = pcall(function() service:SendKeyEvent(true, sprintKey, false, d.target) end)
+        if not sent then
+            enabled = false
+            errorText("O executor recusou Auto Sprint: " .. tostring(err))
+            return
+        end
+        heldKey = sprintKey
+    end
+    function A.Cleanup()
+        enabled = false
+        if not release() then return false, lastError end
+        closed = true
+        if connection then connection:Disconnect(); connection = nil end
+        return true
+    end
+    connection = d.heartbeat:Connect(pulse)
+    return A
+end
+
+return createAutoSprint
 
 end)()
 
@@ -986,8 +1120,8 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = assert(Players.LocalPlayer, "Run this on the client")
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 10)
 -- Bump the release ID for every shipped update to trigger the one-time OK prompt.
-local RELEASE_VERSION = "2026.10.22.1"
-local BUILD = "Zyon Hub 1.0.0 | GK 3.2.7 | STR 0.16.3 | Misc 0.18.0 | Evaluation 0.2"
+local RELEASE_VERSION = "2026.10.22.2"
+local BUILD = "Zyon Hub 1.1.0 | GK 3.2.7 | STR 0.16.3 | Misc 0.19.0 | Evaluation 0.2"
 local ENV = _G
 if type(getgenv) == "function" then
     local ok, environment = pcall(getgenv)
@@ -9059,6 +9193,34 @@ ENV.ZyonMiscDebug = function()
     return result
 end
 
+local SPRINT = createAutoSprint({
+    target = game,
+    heartbeat = RunService.Heartbeat,
+    alive = function() return S.alive end,
+    getBinding = function() return M.Keybinds.Get("Sprint") end,
+    isKeyboardKey = function(key)
+        return typeof(key) == "EnumItem" and key.EnumType == Enum.KeyCode
+            and key ~= Enum.KeyCode.Unknown and not M.Keybinds.IsGamepadKeyCode(key)
+    end,
+    getVirtualInput = function() return game:GetService("VirtualInputManager") end,
+    isKeyDown = function(key) return UserInputService:IsKeyDown(key) end,
+    shouldSprint = function()
+        if not S.focused or S.uiBusy or UserInputService:GetFocusedTextBox()
+            or game:GetService("GuiService").MenuIsOpen or M.Freeze.IsFrozen() or M.Replay.IsActive() then return false end
+        local character = LocalPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        return character and character.Parent and humanoid and humanoid.Health > 0
+            and not M.Controllers.IsSuspended(character) and humanoid.MoveDirection.Magnitude > 0.05
+    end,
+    report = function(message) report("AUTO SPRINT", message) end,
+})
+S.releaseMisc = function()
+    local sprintOK, sprintError = SPRINT.Cleanup()
+    local miscOK, miscError = MISC.Cleanup()
+    if sprintOK == false then return false, sprintError end
+    return miscOK, miscError
+end
+
 --==============================================================
 -- INTERFACE CONTROLS
 --==============================================================
@@ -9186,8 +9348,12 @@ do
             end),
             preShotCoverage = configFeature("PreShotCoverage", function() invalidateFrame(true) end),
             respectManualMovement = configFeature("RespectManualMovement"),
-            -- autoPassing, infiniteStamina, fullSpeedCharge, ballMagnetic and
-            -- autoSprint need real game implementations. Bind them through
+            autoSprint = {
+                Get = SPRINT.Get, Set = SPRINT.Set, Error = SPRINT.Error,
+                Description = "Usa a tecla de Sprint do jogo enquanto você se move.",
+            },
+            -- autoPassing, infiniteStamina, fullSpeedCharge and ballMagnetic
+            -- need real game implementations. Bind them through
             -- ZyonHub.BindFeature(key, { Get = ..., Set = ... }) when available.
         },
         choices = {

@@ -20,8 +20,9 @@ if not compiler:
     raise SystemExit("The official luau-compile executable is required.")
 
 subprocess.run(["python3", "tools/build.py", "--check"], cwd=ROOT, check=True)
-subprocess.run([str(compiler), "--null", "src/ZyonUI.luau", "zyon-hub.lua", "zyon-ui-preview.lua"], cwd=ROOT, check=True)
+subprocess.run([str(compiler), "--null", "src/ZyonUI.luau", "src/AutoSprint.luau", "zyon-hub.lua", "zyon-ui-preview.lua"], cwd=ROOT, check=True)
 subprocess.run([luau, "tests/ui.spec.luau"], cwd=ROOT, check=True)
+subprocess.run([luau, "tests/auto-sprint.spec.luau"], cwd=ROOT, check=True)
 
 core = (ROOT / "src/zyon-core.luau").read_text()
 start = core.index("local function toggleEnabled(value)")
