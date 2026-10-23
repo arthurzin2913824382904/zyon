@@ -1,5 +1,7 @@
 # Zyon Hub
 
+[Análise do loader enviado e mapa dos módulos de Illegal Soccer](docs/analise-illegal-soccer.md).
+
 Interface refeita do zero para a source de **Illegal Soccer** fornecida pelo autor.
 Tema preto fosco e roxo suave, texto branco, abas laterais, linhas compactas,
 bordas discretas, ícones vetoriais e feedback de hover. Janela arrastável,
